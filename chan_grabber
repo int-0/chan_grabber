@@ -1,0 +1,117 @@
+#!/usr/bin/env python
+
+import sys
+import os.path
+import optparse
+
+import chan
+import netapi
+
+
+def main():
+    parser = optparse.OptionParser('usage: %prog [options] board_name|scan')
+    # parser.add_option('-t', '--thumbs', dest = 'thumbs',
+    #                   action = 'store_true', default = False,
+    #                   help = 'Grab thumbnails too')
+    parser.add_option('-r', '--replies', dest = 'replies',
+                      action = 'store_true', default = False,
+                      help = 'Grab images from replies too')
+    parser.add_option('-f', '--real-filenames', dest = 'real_names',
+                      action = 'store_true', default = False,
+                      help = 'Use real filenames instead of "4chan" names')
+    parser.add_option('-o', '--output', dest = 'output',
+                      action = 'store', default = './',
+                      help = 'Destination path')
+    parser.add_option('-l', '--limit', dest = 'limit',
+                      action = 'store', default = -1,
+                      help = 'Limit file size')
+    parser.add_option('-y', '--yes', dest = 'confirm',
+                      action = 'store_false', default = True,
+                      help = 'Assume "yes" in user confirmation')
+
+    (options, args) = parser.parse_args()
+
+    if len(args) != 1:
+        parser.error('Need board name or "scan" to get valid names.')
+    board = args[0]    
+
+    print 'Scanning site...'
+    chan4 = chan.B4Chan()
+    chan4.open()
+
+    if board == 'scan':
+        print '\nAvailable boards:'
+        print '\tName\t\tDescription'
+        print '\t----\t\t-----------'
+        for board in chan4.get_available_boards():
+            print '\t%s\t\t%s' % (board, chan4.get_board_title(board))
+        print
+        sys.exit(0)
+
+    if board not in chan4.get_available_boards():
+        print 'ERROR: board not found, use "scan" to get availables.'
+        sys.exit(-1)
+
+    board = chan4.get_board(board)
+    board.refresh()
+
+    size = 0
+    images = 0
+    image_ptr = []
+
+    for post in board.get_posts():
+        post = board.get_post(post)
+        if post.has_image():
+            images += 1
+            size += post.get_image_size()
+            image_ptr.append((post.board_id,
+                              post.get_image_remote_name(),
+                              post.get_image_extension(),
+                              post.get_image_name()))
+
+        # Go to replies
+        if post.has_replies() and options.replies:
+            thread = post.get_thread()
+            thread.refresh()
+            for reply in thread.get_posts():
+                reply = thread.get_post(reply)
+                if reply.has_image():
+                   images += 1
+                   size += reply.get_image_size()
+                   image_ptr.append((reply.board_id,
+                                     reply.get_image_remote_name(),
+                                     reply.get_image_extension(),
+                                     reply.get_image_name()))
+
+    print '%s images will be dowloaded (total: %s bytes)' % (images, size)
+    if options.confirm:
+        try:
+            raw_input('[Press into to continue or Ctrl-C to cancel.]')
+        except:
+            print '\nCancelled.'
+            sys.exit(-1)
+    
+    for image in image_ptr:
+        print 'Downloading %s...' % image[3]
+        try:
+            data = netapi.get_image(image[0], image[1], image[2])
+        except:
+            print 'Download error, skipping!'
+            data = None
+
+        # Dump to file
+        if data is not None:
+            name = image[3] if options.real_names else (str(image[1]) + image[2])
+            try:
+                fd = open(os.path.join(options.output, name), 'w')
+            except:
+                print 'Invalid filename (codification?)'
+                fd = None
+            if fd is not None:
+                fd.write(data)
+                fd.close()
+
+    print 'Done.'
+
+if __name__ == '__main__':
+    main()
