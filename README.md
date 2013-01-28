@@ -16,3 +16,5 @@ In this pass it makes a list of all images (including replies if you want).
 After that, send HTTP request for each image, one by one.
 
 Easy...
+
+All source is released under GPL 3 license!!
