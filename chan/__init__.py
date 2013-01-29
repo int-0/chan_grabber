@@ -1,3 +1,8 @@
+#
+# PYCHAN
+# 
+# Released under GPL3 license
+#
 #!/usr/bin/env python
 
 import common

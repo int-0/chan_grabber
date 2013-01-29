@@ -1,3 +1,8 @@
+#
+# PYCHAN
+# 
+# Released under GPL3 license
+#
 #!/usr/bin/env python
 
 API_URL = 'http://api.4chan.org/'
