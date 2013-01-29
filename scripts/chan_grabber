@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import sys
-import os.path
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import optparse
 
 import chan
-import netapi
 
 
 def main():
@@ -33,7 +33,7 @@ def main():
 
     if len(args) != 1:
         parser.error('Need board name or "scan" to get valid names.')
-    board = args[0]    
+    board = args[0]
 
     print 'Scanning site...'
     chan4 = chan.B4Chan()
@@ -90,11 +90,11 @@ def main():
         except:
             print '\nCancelled.'
             sys.exit(-1)
-    
+
     for image in image_ptr:
         print 'Downloading %s...' % image[3]
         try:
-            data = netapi.get_image(image[0], image[1], image[2])
+            data = chan.netapi.get_image(image[0], image[1], image[2])
         except:
             print 'Download error, skipping!'
             data = None

@@ -1,0 +1,31 @@
+Source: chan-grabber
+Section: python
+Priority: extra
+Maintainer: Cleto Martín <cleto@debian.org>
+Build-Depends: debhelper (>= 8.0.0), python
+Standards-Version: 3.9.3
+Homepage: http://github.com/int-0/chan_grabber
+X-Python-Version: >= 2.6
+
+Package: python-chan
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends}
+Provides: ${python:Provides}
+Description: Python API for popular chan boards
+ Chan Grabber is a Python framework for creating network applications
+ to interact with chan boards which provide JSON API like 4Chan. It is
+ very simple to use and provide a way to download images, posts and
+ comments from the chan.
+
+Package: chan-grabber
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends},
+	 python-chan (= ${binary:Version})
+Description: 4Chan image downloader
+ Chan Grabber is a Python framework for creating network applications
+ to interact with chan boards which provide JSON API like 4Chan. It is
+ very simple to use and provide a way to download images, posts and
+ comments from the chan.
+ .
+ This application is an example of use of python-chan library and
+ let you download images from 4Chan.

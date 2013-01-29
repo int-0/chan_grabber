@@ -31,4 +31,3 @@ class B4Chan(object):
         if bid not in self.__boards.keys():
             raise BoardNotFound()
         return board.Board(bid)
-

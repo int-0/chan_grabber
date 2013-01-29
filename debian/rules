@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+VERSION=$(shell dpkg-parsechangelog | sed -n 's/^Version: //p' | cut -f1 -d'-')
+PACKAGE_NAME=$(shell dpkg-parsechangelog | sed -n 's/^Source: //p')
+
+%:
+	dh $@ --with python2
+
+override_dh_install:
+	dh_install
+	mv debian/chan-grabber/usr/bin/chan_grabber debian/chan-grabber/usr/bin/chan-grabber
+
+build-orig-source:
+	mkdir -p $(PACKAGE_NAME)-$(VERSION)
+	tar --exclude=debian --exclude=\.pc	\
+		--exclude=$(PACKAGE_NAME)-$(VERSION) -cf - . \
+		| ( cd $(PACKAGE_NAME)-$(VERSION) && tar xf - )
+	tar -czf ../$(PACKAGE_NAME)_$(VERSION).orig.tar.gz $(PACKAGE_NAME)-$(VERSION)
+	$(RM) -r $(PACKAGE_NAME)-$(VERSION)
