@@ -5,7 +5,7 @@
 #
 #!/usr/bin/env python
 
-import netapi
+import request
 import reply_thread
 
 class PostWithoutImage(Exception):
@@ -17,9 +17,10 @@ class PostWithoutReplies(Exception):
         return 'Post does not have replies.'
 
 class Post(object):
-    def __init__(self, data, board_id):
+    def __init__(self, translator, data):
 
-        self.__board_id = board_id
+        self.__translator = translator
+
         self.__id = data['no']
         self.__reply = data['resto']
         self.__date = data['time']
@@ -87,10 +88,10 @@ class Post(object):
     def has_image(self):
         return self.__rfile is not None
 
-    def get_thumb(self):
-        if not self.has_image():
-            raise PostWithoutImage()
-        return netapi.get_thumb(self.__board_id, self.__rfile)
+    # def get_thumb(self):
+    #     if not self.has_image():
+    #         raise PostWithoutImage()
+    #     return netapi.get_thumb(self.__board_id, self.__rfile)
 
     def get_image_remote_name(self):
         return self.__rfile
@@ -101,7 +102,8 @@ class Post(object):
     def get_image(self):
         if not self.has_image():
             raise PostWithoutImage()
-        return netapi.get_image(self.__board_id, self.__rfile, self.__ext)
+        return request.to_file(self.__translator.file(self.__rfile,
+                                                      self.__ext))
 
     def get_image_name(self):
         if not self.has_image():
@@ -119,7 +121,7 @@ class Post(object):
 
     @property
     def board_id(self):
-        return self.__board_id
+        return self.__translator.board_id
 
     @property
     def replies(self):
@@ -131,5 +133,5 @@ class Post(object):
     def get_thread(self):
         if self.replies == 0:
             raise PostWithoutReplies()
-        return reply_thread.ReplyThread(self.board_id, self.thread_id)
+        return reply_thread.ReplyThread(self.__translator, self.thread_id)
 

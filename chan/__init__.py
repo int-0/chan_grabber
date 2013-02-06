@@ -9,17 +9,20 @@ import common
 import netapi
 import board
 
+import request
+import translator
+
 class BoardNotFound(Exception):
     def __str__(self):
         return 'Board not found.'
 
 class B4Chan(object):
     def __init__(self):
-        self.__chan_api = common.API_URL + 'boards.json'
         self.__boards = {}
 
     def open(self):
-        data = netapi.fetch(self.__chan_api)
+        data = request.to_api('http://api.4chan.org/boards.json')
+
         for board_data in data['boards']:
             self.__boards[board_data['board']] = {
                 'title' : board_data.get('title', 'unknown'),
@@ -33,6 +36,7 @@ class B4Chan(object):
         return self.__boards.get(board_id, {'title' : None})['title']
 
     def get_board(self, bid):
+        chan = translator.T4Chan(bid)
         if bid not in self.__boards.keys():
             raise BoardNotFound()
-        return board.Board(bid)
+        return board.Board(chan)
