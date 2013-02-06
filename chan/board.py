@@ -17,15 +17,23 @@ class Board(object):
         self.__translator = translator
         self.__posts = {}
 
+    @property
+    def translator(self):
+        return self.__translator
+
     def update(self, clear = False):
         if clear:
             self.__posts = {}
-        threads = request.to_api(self.__translator.thread(0))
-        threads = threads['threads']
 
-        for thread in threads:
-            for post in thread['posts']:
-                self.__posts.update({post['no'] : post})
+        for page in range(self.__translator.max_pages):
+            try:
+                threads = request.to_api(self.__translator.thread(page))['threads']
+            except request.InvalidRequest:
+                break
+
+            for thread in threads:
+                for post in thread['posts']:
+                    self.__posts.update({post['no'] : post})
 
     def get_posts(self):
         return self.__posts.keys()

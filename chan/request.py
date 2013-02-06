@@ -3,10 +3,21 @@
 import json
 import urllib2
 
+class InvalidRequest(Exception):
+    def __str__(self):
+        return 'Unable to handle given request'
+
 def to_api(request):
-    remote = urllib2.urlopen(request)
-    return json.loads(remote.read())
+    try:
+        remote = urllib2.urlopen(request)
+        return json.loads(remote.read())
+    except urllib2.HTTPError:
+        raise InvalidRequest()
 
 def to_file(request):
-    remote = urllib2.urlopen(request)
-    return remote.read()
+    try:
+        remote = urllib2.urlopen(request)
+        return remote.read()
+    except urllib2.HTTPError:
+        raise InvalidRequest()
+

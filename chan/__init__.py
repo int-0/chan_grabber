@@ -5,8 +5,6 @@
 #
 #!/usr/bin/env python
 
-import common
-import netapi
 import board
 
 import request
@@ -22,7 +20,6 @@ class B4Chan(object):
 
     def open(self):
         data = request.to_api('http://api.4chan.org/boards.json')
-
         for board_data in data['boards']:
             self.__boards[board_data['board']] = {
                 'title' : board_data.get('title', 'unknown'),

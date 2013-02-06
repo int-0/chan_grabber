@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+MAX_PAGES = 50
+        
 class InvalidThread(Exception):
     def __init__(self, id):
         self.__id = id
@@ -15,6 +17,10 @@ class InvalidFile(Exception):
 class Translator(object):
     def __init__(self, board_id):
         self.__board_id = board_id
+
+    @property
+    def max_pages(self):
+        return MAX_PAGES
 
     @property
     def board_id(self):
@@ -33,17 +39,17 @@ class T4Chan(Translator):
         self._FILE_BASE = 'http://images.4chan.org/'
 
     def thread(self, thread_id):
-        if thread_id == 0:
+        if thread_id < self.max_pages:
             # Root thread
-            return '%s%s/0.json' % (self._API_URL,
-                                    self.board_id)
+            return '%s%s/%s.json' % (self._API_URL,
+                                     self.board_id,
+                                     thread_id)
         # Reply thread
         return '%s%s/res/%s.json' % (self._API_URL,
                                      self.board_id,
                                      thread_id)
 
     def file(self, file_id):
-        return '%s%s/src/%s%s' % (self._FILE_BASE,
-                                  self.board_id,
-                                  file_id[0],
-                                  file_id[1])
+        return '%s%s/src/%s' % (self._FILE_BASE,
+                                self.board_id,
+                                file_id)

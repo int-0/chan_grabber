@@ -12,9 +12,10 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import optparse
 
 import chan
+import request
 
 def main():
-    parser = optparse.OptionParser('usage: %prog [options] board_name|scan')
+    parser = optparse.OptionParser('usage: %prog [options] board_name|scan [thread]')
     # parser.add_option('-t', '--thumbs', dest = 'thumbs',
     #                   action = 'store_true', default = False,
     #                   help = 'Grab thumbnails too')
@@ -36,9 +37,17 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    if len(args) != 1:
+    if len(args) < 1:
         parser.error('Need board name or "scan" to get valid names.')
     board = args[0]
+
+    thread = None
+    if len(args) == 2:
+        try:
+            thread = int(args[1])
+        except:
+            print 'Invalid post id: %s' % args[1]
+            sys.exit(-1)
 
     print 'Scanning site...'
     chan4 = chan.B4Chan()
@@ -61,34 +70,48 @@ def main():
     board.update()
 
     size = 0
-    images = 0
-    image_ptr = []
+    images = []
 
-    for post in board.get_posts():
-        post = board.get_post(post)
-        if post.has_image():
-            images += 1
-            size += post.get_image_size()
-            image_ptr.append((post.board_id,
-                              post.get_image_remote_name(),
-                              post.get_image_extension(),
-                              post.get_image_name()))
+    if thread is not None:
+        try:
+            thread = board.get_post(thread)
+        except chan.board.PostNotFound:
+            print 'Given post not found in root of the board!'
+            sys.exit(-1)
+        thread = thread.get_thread()
+        thread.update()
+        for reply in thread.get_posts():
+            reply = thread.get_post(reply)
+            if reply.has_image():
+                size += reply.get_image_size()
+                images.append(('%s%s' % (reply.get_image_remote_name(),
+                                         reply.get_image_extension()),
+                               reply.get_image_name()))
+    else:
+        for post in board.get_posts():
+            post = board.get_post(post)
+            if post.has_image():
+                size += post.get_image_size()
+                images.append(('%s%s' % (post.get_image_remote_name(),
+                                         post.get_image_extension()),
+                               post.get_image_name()))
 
-        # Go to replies
-        if post.has_replies() and options.replies:
-            thread = post.get_thread()
-            thread.update()
-            for reply in thread.get_posts():
-                reply = thread.get_post(reply)
-                if reply.has_image():
-                   images += 1
-                   size += reply.get_image_size()
-                   image_ptr.append((reply.board_id,
-                                     reply.get_image_remote_name(),
-                                     reply.get_image_extension(),
-                                     reply.get_image_name()))
+            # Go to replies
+            if post.has_replies() and options.replies:
+                thread = post.get_thread()
+                thread.update()
+                for reply in thread.get_posts():
+                    reply = thread.get_post(reply)
+                    if reply.has_image():
+                        size += reply.get_image_size()
+                        images.append(('%s%s' % (reply.get_image_remote_name(),
+                                                 reply.get_image_extension()),
+                                       reply.get_image_name()))
 
-    print '%s images will be dowloaded (total: %s bytes)' % (images, size)
+    print images
+
+    print '%s images will be dowloaded (total: %s bytes)' % (len(images),
+                                                             size)
     if options.confirm:
         try:
             raw_input('[Press into to continue or Ctrl-C to cancel.]')
@@ -96,17 +119,21 @@ def main():
             print '\nCancelled.'
             sys.exit(-1)
 
-    for image in image_ptr:
-        print 'Downloading %s...' % image[3]
+    in_image = 0
+    for image in images:
+        in_image += 1
+        print 'Downloading (%s/%s) %s...' % (in_image,
+                                             len(images),
+                                             image[1])
         try:
-            data = chan.netapi.get_image(image[0], image[1], image[2])
-        except:
+            data = request.to_file(board.translator.file(image[0]))
+        except request.InvalidRequest:
             print 'Download error, skipping!'
             data = None
 
         # Dump to file
         if data is not None:
-            name = image[3] if options.real_names else (str(image[1]) + image[2])
+            name = image[2] if options.real_names else image[0]
             try:
                 fd = open(os.path.join(options.output, name), 'w')
             except:
