@@ -108,8 +108,6 @@ def main():
                                                  reply.get_image_extension()),
                                        reply.get_image_name()))
 
-    print images
-
     print '%s images will be dowloaded (total: %s bytes)' % (len(images),
                                                              size)
     if options.confirm:
