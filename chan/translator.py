@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
+# A Translator() object converts thread-ids and file-ids
+# into HTTP requests
+#
+
 MAX_PAGES = 50
-        
+
 class InvalidThread(Exception):
     def __init__(self, id):
         self.__id = id
@@ -14,6 +18,7 @@ class InvalidFile(Exception):
     def __str__(self):
         return 'Unknown file #id %s' % self.__id
 
+# Generic translator interface
 class Translator(object):
     def __init__(self, board_id):
         self.__board_id = board_id
@@ -32,6 +37,7 @@ class Translator(object):
     def file(self, file_id):
         raise NotImplementedError()
 
+# Translator for 4CHAN
 class T4Chan(Translator):
     def __init__(self, board_id):
         Translator.__init__(self, board_id)
