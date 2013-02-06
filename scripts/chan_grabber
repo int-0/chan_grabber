@@ -12,7 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import optparse
 
 import chan
-import request
+import chan.request
 
 def main():
     parser = optparse.OptionParser('usage: %prog [options] board_name|scan [thread]')
@@ -126,8 +126,8 @@ def main():
                                              len(images),
                                              image[1])
         try:
-            data = request.to_file(board.translator.file(image[0]))
-        except request.InvalidRequest:
+            data = chan.request.to_file(board.translator.file(image[0]))
+        except chan.request.InvalidRequest:
             print 'Download error, skipping!'
             data = None
 
