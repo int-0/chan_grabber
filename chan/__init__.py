@@ -3,23 +3,22 @@
 # 
 # Released under GPL3 license
 #
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import board
-
-import request
-import translator
+import chan.board
+import chan.request
+import chan.translator
 
 class BoardNotFound(Exception):
     def __str__(self):
         return 'Board not found.'
 
-class B4Chan(object):
+class B4Chan:
     def __init__(self):
         self.__boards = {}
 
     def open(self):
-        data = request.to_api('http://api.4chan.org/boards.json')
+        data = chan.request.to_api('http://a.4cdn.org/boards.json')
         for board_data in data['boards']:
             self.__boards[board_data['board']] = {
                 'title' : board_data.get('title', 'unknown'),
@@ -33,7 +32,7 @@ class B4Chan(object):
         return self.__boards.get(board_id, {'title' : None})['title']
 
     def get_board(self, bid):
-        chan = translator.T4Chan(bid)
+        ch = chan.translator.T4Chan(bid)
         if bid not in self.__boards.keys():
             raise BoardNotFound()
-        return board.Board(chan)
+        return chan.board.Board(ch)

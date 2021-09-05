@@ -3,10 +3,10 @@
 # 
 # Released under GPL3 license
 #
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import request
-import reply_thread
+import chan.request
+import chan.reply_thread
 
 class PostWithoutImage(Exception):
     def __str__(self):
@@ -102,8 +102,7 @@ class Post(object):
     def get_image(self):
         if not self.has_image():
             raise PostWithoutImage()
-        return request.to_file(self.__translator.file(self.__rfile,
-                                                      self.__ext))
+        return chan.request.to_file(self.__translator.file(self.__rfile, self.__ext))
 
     def get_image_name(self):
         if not self.has_image():
@@ -133,5 +132,5 @@ class Post(object):
     def get_thread(self):
         if self.replies == 0:
             raise PostWithoutReplies()
-        return reply_thread.ReplyThread(self.__translator, self.thread_id)
+        return chan.reply_thread.ReplyThread(self.__translator, self.thread_id)
 

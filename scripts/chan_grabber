@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #
 # chan_grabber for PYCHAN
@@ -46,24 +46,24 @@ def main():
         try:
             thread = int(args[1])
         except:
-            print 'Invalid post id: %s' % args[1]
+            print('Invalid post id: %s' % args[1])
             sys.exit(-1)
 
-    print 'Scanning site...'
+    print('Scanning site...')
     chan4 = chan.B4Chan()
     chan4.open()
 
     if board == 'scan':
-        print '\nAvailable boards:'
-        print '\tName\t\tDescription'
-        print '\t----\t\t-----------'
+        print('\nAvailable boards:')
+        print('\tName\t\tDescription')
+        print('\t----\t\t-----------')
         for board in chan4.get_available_boards():
-            print '\t%s\t\t%s' % (board, chan4.get_board_title(board))
-        print
+            print('\t%s\t\t%s' % (board, chan4.get_board_title(board)))
+        print()
         sys.exit(0)
 
     if board not in chan4.get_available_boards():
-        print 'ERROR: board not found, use "scan" to get availables.'
+        print('ERROR: board not found, use "scan" to get availables.')
         sys.exit(-1)
 
     board = chan4.get_board(board)
@@ -76,7 +76,7 @@ def main():
         try:
             thread = board.get_post(thread)
         except chan.board.PostNotFound:
-            print 'Given post not found in root of the board!'
+            print('Given post not found in root of the board!')
             sys.exit(-1)
         thread = thread.get_thread()
         thread.update()
@@ -108,25 +108,22 @@ def main():
                                                  reply.get_image_extension()),
                                        reply.get_image_name()))
 
-    print '%s images will be dowloaded (total: %s bytes)' % (len(images),
-                                                             size)
+    print('%s images will be dowloaded (total: %s bytes)' % (len(images), size))
     if options.confirm:
         try:
             raw_input('[Press into to continue or Ctrl-C to cancel.]')
         except:
-            print '\nCancelled.'
+            print('\nCancelled.')
             sys.exit(-1)
 
     in_image = 0
     for image in images:
         in_image += 1
-        print 'Downloading (%s/%s) %s...' % (in_image,
-                                             len(images),
-                                             image[1])
+        print('Downloading (%s/%s) %s...' % (in_image, len(images), image[1]))
         try:
             data = chan.request.to_file(board.translator.file(image[0]))
         except chan.request.InvalidRequest:
-            print 'Download error, skipping!'
+            print('Download error, skipping!')
             data = None
 
         # Dump to file
@@ -135,13 +132,13 @@ def main():
             try:
                 fd = open(os.path.join(options.output, name), 'w')
             except:
-                print 'Invalid filename (codification?)'
+                print('Invalid filename (codification?)')
                 fd = None
             if fd is not None:
                 fd.write(data)
                 fd.close()
 
-    print 'Done.'
+    print('Done.')
 
 if __name__ == '__main__':
     main()

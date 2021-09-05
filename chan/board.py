@@ -3,16 +3,16 @@
 # 
 # Released under GPL3 license
 #
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import post
-import request
+import chan.post
+import chan.request
 
 class PostNotFound(Exception):
     def __str__(self):
         return 'Post not found in board.'
 
-class Board(object):
+class Board:
     def __init__(self, translator):
         self.__translator = translator
         self.__posts = {}
@@ -27,8 +27,8 @@ class Board(object):
 
         for page in range(self.__translator.max_pages):
             try:
-                threads = request.to_api(self.__translator.thread(page))['threads']
-            except request.InvalidRequest:
+                threads = chan.request.to_api(self.__translator.thread(page))['threads']
+            except chan.request.InvalidRequest:
                 break
 
             for thread in threads:
@@ -41,7 +41,7 @@ class Board(object):
     def get_post(self, post_no):
         if post_no not in self.get_posts():
             raise PostNotFound()
-        return post.Post(self.__translator, self.__posts[post_no])
+        return chan.post.Post(self.__translator, self.__posts[post_no])
 
     def __contains__(self, post_no):
         assert(isinstance(post_no, int))

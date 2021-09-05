@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import json
-import urllib2
+import urllib.request
 import socket
 
 class InvalidRequest(Exception):
@@ -10,15 +10,14 @@ class InvalidRequest(Exception):
 
 def to_api(request):
     try:
-        remote = urllib2.urlopen(request)
-        return json.loads(remote.read())
-    except (urllib2.HTTPError, socket.error):
+        with urllib.request.urlopen(request) as response:
+            return json.loads(response.read())
+    except (Exception):
         raise InvalidRequest()
 
 def to_file(request):
     try:
-        remote = urllib2.urlopen(request)
-        return remote.read()
-    except (urllib2.HTTPError, socket.error):
+        with urllib.request.urlopen(request) as response:
+            return response.read()
+    except (Exception):
         raise InvalidRequest()
-
