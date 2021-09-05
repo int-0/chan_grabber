@@ -1,22 +1,19 @@
-#
-# PYCHAN
+#!/usr/bin/env python3
 # 
 # Released under GPL3 license
 #
-#!/usr/bin/env python3
 
+'''
+    A quick'n'dirty posts wrapper
+'''
+
+import chan.errors
 import chan.request
 import chan.reply_thread
 
-class PostWithoutImage(Exception):
-    def __str__(self):
-        return 'Post does not have images.'
 
-class PostWithoutReplies(Exception):
-    def __str__(self):
-        return 'Post does not have replies.'
-
-class Post(object):
+class Post:
+    '''Any post'''
     def __init__(self, translator, data):
 
         self.__translator = translator
@@ -101,23 +98,27 @@ class Post(object):
 
     def get_image(self):
         if not self.has_image():
-            raise PostWithoutImage()
+            raise chan.errors.PostWithoutImage()
         return chan.request.to_file(self.__translator.file(self.__rfile, self.__ext))
 
     def get_image_name(self):
         if not self.has_image():
-            raise PostWithoutImage()
+            raise chan.errors.PostWithoutImage()
         return '%s%s' % (self.__ofile, self.__ext)
 
     def get_image_size(self):
         if not self.has_image():
-            raise PostWithoutImage()
+            raise chan.errors.PostWithoutImage()
         return self.__file_size
     
     @property
     def thread_id(self):
         return self.__id
 
+    @property
+    def subject(self):
+        return self.__subject
+        
     @property
     def board_id(self):
         return self.__translator.board_id
@@ -131,6 +132,6 @@ class Post(object):
 
     def get_thread(self):
         if self.replies == 0:
-            raise PostWithoutReplies()
+            raise chan.errors.PostWithoutReplies()
         return chan.reply_thread.ReplyThread(self.__translator, self.thread_id)
 

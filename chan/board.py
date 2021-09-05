@@ -6,13 +6,11 @@
 #!/usr/bin/env python3
 
 import chan.post
+import chan.errors
 import chan.request
 
-class PostNotFound(Exception):
-    def __str__(self):
-        return 'Post not found in board.'
-
 class Board:
+    '''Forum board wrapper'''
     def __init__(self, translator):
         self.__translator = translator
         self.__posts = {}
@@ -25,10 +23,10 @@ class Board:
         if clear:
             self.__posts = {}
 
-        for page in range(self.__translator.max_pages):
+        for page in range(1, self.__translator.max_pages):
             try:
                 threads = chan.request.to_api(self.__translator.thread(page))['threads']
-            except chan.request.InvalidRequest:
+            except chan.errors.InvalidRequest:
                 break
 
             for thread in threads:
@@ -36,11 +34,11 @@ class Board:
                     self.__posts.update({post['no'] : post})
 
     def get_posts(self):
-        return self.__posts.keys()
+        return list(self.__posts.keys())
 
     def get_post(self, post_no):
         if post_no not in self.get_posts():
-            raise PostNotFound()
+            raise chan.errors.PostNotFound()
         return chan.post.Post(self.__translator, self.__posts[post_no])
 
     def __contains__(self, post_no):

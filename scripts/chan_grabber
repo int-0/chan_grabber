@@ -1,53 +1,26 @@
 #!/usr/bin/env python3
-
 #
-# chan_grabber for PYCHAN
-# 
 # Released under GPL3 license
 #
 
-import sys
+'''
+Thread/channel grabber for 4chan
+'''
+
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-import optparse
+import sys
+import argparse
 
 import chan
+import chan.errors
 import chan.request
 
 def main():
-    parser = optparse.OptionParser('usage: %prog [options] board_name|scan [thread]')
-    # parser.add_option('-t', '--thumbs', dest = 'thumbs',
-    #                   action = 'store_true', default = False,
-    #                   help = 'Grab thumbnails too')
-    parser.add_option('-r', '--replies', dest = 'replies',
-                      action = 'store_true', default = False,
-                      help = 'Grab images from replies too')
-    parser.add_option('-f', '--real-filenames', dest = 'real_names',
-                      action = 'store_true', default = False,
-                      help = 'Use real filenames instead of "4chan" names')
-    parser.add_option('-o', '--output', dest = 'output',
-                      action = 'store', default = './',
-                      help = 'Destination path')
-    parser.add_option('-l', '--limit', dest = 'limit',
-                      action = 'store', default = -1,
-                      help = 'Limit file size')
-    parser.add_option('-y', '--yes', dest = 'confirm',
-                      action = 'store_false', default = True,
-                      help = 'Assume "yes" in user confirmation')
 
-    (options, args) = parser.parse_args()
+    user_options = parse_commandline()
 
-    if len(args) < 1:
-        parser.error('Need board name or "scan" to get valid names.')
-    board = args[0]
-
-    thread = None
-    if len(args) == 2:
-        try:
-            thread = int(args[1])
-        except:
-            print('Invalid post id: %s' % args[1])
-            sys.exit(-1)
+    board = user_options.BOARD
+    thread = user_options.THREAD
 
     print('Scanning site...')
     chan4 = chan.B4Chan()
@@ -58,7 +31,7 @@ def main():
         print('\tName\t\tDescription')
         print('\t----\t\t-----------')
         for board in chan4.get_available_boards():
-            print('\t%s\t\t%s' % (board, chan4.get_board_title(board)))
+            print('\t{}\t\t{}'.format(board, chan4.get_board_title(board)))
         print()
         sys.exit(0)
 
@@ -72,22 +45,11 @@ def main():
     size = 0
     images = []
 
-    if thread is not None:
-        try:
-            thread = board.get_post(thread)
-        except chan.board.PostNotFound:
-            print('Given post not found in root of the board!')
-            sys.exit(-1)
-        thread = thread.get_thread()
-        thread.update()
-        for reply in thread.get_posts():
-            reply = thread.get_post(reply)
-            if reply.has_image():
-                size += reply.get_image_size()
-                images.append(('%s%s' % (reply.get_image_remote_name(),
-                                         reply.get_image_extension()),
-                               reply.get_image_name()))
-    else:
+    if thread is None:
+        print('Retrieving full thread list...')
+        print('\tThread ID\t\tThread subject')
+        print('\t---------\t\t--------------')
+        threads = []
         for post in board.get_posts():
             post = board.get_post(post)
             if post.has_image():
@@ -95,9 +57,10 @@ def main():
                 images.append(('%s%s' % (post.get_image_remote_name(),
                                          post.get_image_extension()),
                                post.get_image_name()))
+                threads.append((post.thread_id, post.subject))
 
             # Go to replies
-            if post.has_replies() and options.replies:
+            if post.has_replies() and user_options.replies:
                 thread = post.get_thread()
                 thread.update()
                 for reply in thread.get_posts():
@@ -107,11 +70,34 @@ def main():
                         images.append(('%s%s' % (reply.get_image_remote_name(),
                                                  reply.get_image_extension()),
                                        reply.get_image_name()))
+                        threads.append((reply.thread_id, reply.subject))
+        
+        threads.sort(key=lambda th: th[0])
+        for thread_id, subject in threads:
+            print(f'\t{thread_id}\t\t{subject}')
+        sys.exit(0)
+        
+    try:
+        thread = board.get_post(int(thread))
+    except chan.errors.PostNotFound:
+        print('Given post not found in root of the board!')
+        sys.exit(-1)
+        
+    thread = thread.get_thread()
+    thread.update()
+    for reply in thread.get_posts():
+        reply = thread.get_post(reply)
+        if reply.has_image():
+            size += reply.get_image_size()
+            images.append((
+                '%s%s' % (reply.get_image_remote_name(), reply.get_image_extension()),
+                reply.get_image_name()
+            ))
 
     print('%s images will be dowloaded (total: %s bytes)' % (len(images), size))
-    if options.confirm:
+    if user_options.confirm:
         try:
-            raw_input('[Press into to continue or Ctrl-C to cancel.]')
+            input('[Press into to continue or Ctrl-C to cancel.]')
         except:
             print('\nCancelled.')
             sys.exit(-1)
@@ -122,15 +108,15 @@ def main():
         print('Downloading (%s/%s) %s...' % (in_image, len(images), image[1]))
         try:
             data = chan.request.to_file(board.translator.file(image[0]))
-        except chan.request.InvalidRequest:
+        except chan.errors.InvalidRequest:
             print('Download error, skipping!')
             data = None
 
         # Dump to file
         if data is not None:
-            name = image[2] if options.real_names else image[0]
+            name = image[2] if user_options.real_names else image[0]
             try:
-                fd = open(os.path.join(options.output, name), 'w')
+                fd = open(os.path.join(user_options.output, name), 'wb')
             except:
                 print('Invalid filename (codification?)')
                 fd = None
@@ -139,6 +125,31 @@ def main():
                 fd.close()
 
     print('Done.')
+
+def parse_commandline():
+    '''Parse and check commandline'''
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('BOARD', help='Board to grab or "scan" to get list of boards')
+    parser.add_argument('THREAD', nargs='?', default=None)
+    parser.add_argument('-r', '--replies', dest = 'replies',
+                        action = 'store_true', default = False,
+                        help = 'Grab images from replies too')
+    parser.add_argument('-f', '--real-filenames', dest = 'real_names',
+                        action = 'store_true', default = False,
+                        help = 'Use real filenames instead of "4chan" names')
+    parser.add_argument('-o', '--output', dest = 'output',
+                        action = 'store', default = './',
+                        help = 'Destination path')
+    parser.add_argument('-l', '--limit', dest = 'limit',
+                        action = 'store', default = -1,
+                        help = 'Limit file size')
+    parser.add_argument('-y', '--yes', dest = 'confirm',
+                        action = 'store_false', default = True,
+                        help = 'Assume "yes" in user confirmation')
+
+    options = parser.parse_args()
+    return options
+
 
 if __name__ == '__main__':
     main()

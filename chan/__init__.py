@@ -6,12 +6,9 @@
 #!/usr/bin/env python3
 
 import chan.board
+import chan.errors
 import chan.request
 import chan.translator
-
-class BoardNotFound(Exception):
-    def __str__(self):
-        return 'Board not found.'
 
 class B4Chan:
     def __init__(self):
@@ -22,7 +19,8 @@ class B4Chan:
         for board_data in data['boards']:
             self.__boards[board_data['board']] = {
                 'title' : board_data.get('title', 'unknown'),
-                'pages' : board_data.get('pages', -1)
+                'pages' : board_data.get('pages', -1),
+                'archived': board_data.get('is_archived', False)
                 }
 
     def get_available_boards(self):
@@ -34,5 +32,5 @@ class B4Chan:
     def get_board(self, bid):
         ch = chan.translator.T4Chan(bid)
         if bid not in self.__boards.keys():
-            raise BoardNotFound()
+            raise chan.errors.BoardNotFound()
         return chan.board.Board(ch)

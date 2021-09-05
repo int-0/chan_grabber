@@ -4,20 +4,18 @@ import json
 import urllib.request
 import socket
 
-class InvalidRequest(Exception):
-    def __str__(self):
-        return 'Unable to handle given request'
+import chan.errors
 
-def to_api(request):
-    try:
-        with urllib.request.urlopen(request) as response:
-            return json.loads(response.read())
-    except (Exception):
-        raise InvalidRequest()
 
 def to_file(request):
+    '''Send request and return response as data'''
     try:
         with urllib.request.urlopen(request) as response:
             return response.read()
-    except (Exception):
-        raise InvalidRequest()
+    except Exception as error:
+        raise chan.errors.InvalidRequest(str(error))
+
+
+def to_api(request):
+    '''Send request and parse response as JSON'''
+    return json.loads(to_file(request))
